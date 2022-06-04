@@ -10,6 +10,14 @@ from .exceptions import DeviceException
 from .miot_device import DeviceStatus, MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
+
+SUPPORTED_MODELS = [
+    "xiaomi.aircondition.mc1",
+    "xiaomi.aircondition.mc2",
+    "xiaomi.aircondition.mc4",
+    "xiaomi.aircondition.mc5",
+]
+
 _MAPPING = {
     # Source http://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:air-conditioner:0000A004:xiaomi-mc4:1
     # Air Conditioner (siid=2)
@@ -38,6 +46,9 @@ _MAPPING = {
     "fan_speed_percent": {"siid": 10, "piid": 1},
     "timer": {"siid": 10, "piid": 3},
 }
+
+_MAPPINGS = {model: _MAPPING for model in SUPPORTED_MODELS}
+
 
 CLEANING_STAGES = [
     "Stopped",
@@ -273,7 +284,7 @@ class AirConditionerMiotStatus(DeviceStatus):
 class AirConditionerMiot(MiotDevice):
     """Main class representing the air conditioner which uses MIoT protocol."""
 
-    mapping = _MAPPING
+    _mappings = _MAPPINGS
 
     @command(
         default_output=format_output(

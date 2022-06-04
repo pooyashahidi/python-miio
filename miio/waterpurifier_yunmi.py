@@ -7,6 +7,8 @@ from .device import Device, DeviceStatus
 
 _LOGGER = logging.getLogger(__name__)
 
+SUPPORTED_MODELS = ["yunmi.waterpuri.lx9", "yunmi.waterpuri.lx11"]
+
 ERROR_DESCRIPTION = [
     {
         "name": "Water temperature anomaly",
@@ -240,6 +242,8 @@ class WaterPurifierYunmiStatus(DeviceStatus):
 class WaterPurifierYunmi(Device):
     """Main class representing the water purifier (Yunmi model)."""
 
+    _supported_models = SUPPORTED_MODELS
+
     @command(
         default_output=format_output(
             "",
@@ -299,7 +303,7 @@ class WaterPurifierYunmi(Device):
         time.
         Key "mode" (always 'purifying') and key "tds_out_avg" (always 0) are not
         included in return values.
-        """
+        """  # noqa: B018
         values = self.send("get_prop", ["all"])
 
         prop_count = len(properties)

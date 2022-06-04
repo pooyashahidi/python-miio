@@ -1,6 +1,5 @@
 import enum
 import logging
-import warnings
 
 import click
 
@@ -95,14 +94,7 @@ class WifiSpeakerStatus(DeviceStatus):
 class WifiSpeaker(Device):
     """Device class for Xiaomi Smart Wifi Speaker."""
 
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "Please help to complete this by providing more "
-            "information about possible values for `state`, "
-            "`play_mode` and `transport_channel`.",
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)
+    _supported_models = ["xiaomi.wifispeaker.v2"]
 
     @command(
         default_output=format_output(

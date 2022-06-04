@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    miio.gateway
+   miio.integrations
 
 Submodules
 ----------
@@ -34,7 +35,6 @@ Submodules
    miio.alarmclock
    miio.aqaracamera
    miio.ceil
-   miio.ceil_cli
    miio.chuangmi_camera
    miio.chuangmi_ir
    miio.chuangmi_plug
@@ -45,7 +45,6 @@ Submodules
    miio.device
    miio.deviceinfo
    miio.discovery
-   miio.dreamevacuum_miot
    miio.exceptions
    miio.extract_tokens
    miio.fan
@@ -59,29 +58,21 @@ Submodules
    miio.miot_device
    miio.philips_bulb
    miio.philips_eyecare
-   miio.philips_eyecare_cli
    miio.philips_moonlight
    miio.philips_rwread
-   miio.plug_cli
    miio.powerstrip
    miio.protocol
    miio.pwzn_relay
-   miio.roidmivacuum_miot
    miio.scishare_coffeemaker
    miio.toiletlid
    miio.updater
    miio.utils
    miio.vacuum
-   miio.vacuum_cli
-   miio.vacuum_tui
-   miio.vacuumcontainers
-   miio.viomivacuum
    miio.walkingpad
    miio.waterpurifier
    miio.waterpurifier_yunmi
    miio.wifirepeater
    miio.wifispeaker
-   miio.yeelight
    miio.yeelight_dual_switch
 
 Module contents

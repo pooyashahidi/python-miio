@@ -41,6 +41,7 @@ class SubDevice:
         if model_info is None:
             model_info = {}
         self._model_info = model_info
+        self._battery_powered = model_info.get("battery_powered", True)
         self._battery = None
         self._voltage = None
         self._fw_ver = dev_info.fw_ver
@@ -60,7 +61,7 @@ class SubDevice:
         self.setter = model_info.get("setter")
 
     def __repr__(self):
-        return "<Subdevice %s: %s, model: %s, zigbee: %s, fw: %s, bat: %s, vol: %s, props: %s>" % (
+        return "<Subdevice {}: {}, model: {}, zigbee: {}, fw: {}, bat: {}, vol: {}, props: {}>".format(
             self.device_type,
             self.sid,
             self.model,
@@ -128,7 +129,8 @@ class SubDevice:
             except Exception as ex:
                 raise GatewayException(
                     "One or more unexpected results while "
-                    "fetching properties %s: %s" % (self.get_prop_exp_dict, values)
+                    "fetching properties %s: %s on model %s"
+                    % (self.get_prop_exp_dict, values, self.model)
                 ) from ex
 
     @command()
@@ -138,7 +140,8 @@ class SubDevice:
             return self._gw.send(command, [self.sid])
         except Exception as ex:
             raise GatewayException(
-                "Got an exception while sending command %s" % (command)
+                "Got an exception while sending command %s on model %s"
+                % (command, self.model)
             ) from ex
 
     @command()
@@ -149,7 +152,8 @@ class SubDevice:
         except Exception as ex:
             raise GatewayException(
                 "Got an exception while sending "
-                "command '%s' with arguments '%s'" % (command, str(arguments))
+                "command '%s' with arguments '%s' on model %s"
+                % (command, str(arguments), self.model)
             ) from ex
 
     @command(click.argument("property"))
@@ -159,12 +163,13 @@ class SubDevice:
             response = self._gw.send("get_device_prop", [self.sid, property])
         except Exception as ex:
             raise GatewayException(
-                "Got an exception while fetching property %s" % (property)
+                "Got an exception while fetching property %s on model %s"
+                % (property, self.model)
             ) from ex
 
         if not response:
             raise GatewayException(
-                "Empty response while fetching property '%s': %s" % (property, response)
+                f"Empty response while fetching property '{property}': {response} on model {self.model}"
             )
 
         return response
@@ -178,13 +183,14 @@ class SubDevice:
             ).pop()
         except Exception as ex:
             raise GatewayException(
-                "Got an exception while fetching properties %s: %s" % (properties)
+                "Got an exception while fetching properties %s on model %s"
+                % (properties, self.model)
             ) from ex
 
         if len(list(properties)) != len(response):
             raise GatewayException(
-                "unexpected result while fetching properties %s: %s"
-                % (properties, response)
+                "unexpected result while fetching properties %s: %s on model %s"
+                % (properties, response, self.model)
             )
 
         return response
@@ -196,8 +202,8 @@ class SubDevice:
             return self._gw.send("set_device_prop", {"sid": self.sid, property: value})
         except Exception as ex:
             raise GatewayException(
-                "Got an exception while setting propertie %s to value %s"
-                % (property, str(value))
+                "Got an exception while setting propertie %s to value %s on model %s"
+                % (property, str(value), self.model)
             ) from ex
 
     @command()
@@ -206,8 +212,15 @@ class SubDevice:
         return self.send("remove_device")
 
     @command()
-    def get_battery(self):
+    def get_battery(self) -> Optional[int]:
         """Update the battery level, if available."""
+        if not self._battery_powered:
+            _LOGGER.debug(
+                "%s is not battery powered, get_battery not supported",
+                self.name,
+            )
+            return None
+
         if self._gw.model not in [GATEWAY_MODEL_EU, GATEWAY_MODEL_ZIG3]:
             self._battery = self.send("get_battery").pop()
         else:
@@ -218,8 +231,15 @@ class SubDevice:
         return self._battery
 
     @command()
-    def get_voltage(self):
+    def get_voltage(self) -> Optional[float]:
         """Update the battery voltage, if available."""
+        if not self._battery_powered:
+            _LOGGER.debug(
+                "%s is not battery powered, get_voltage not supported",
+                self.name,
+            )
+            return None
+
         if self._gw.model in [GATEWAY_MODEL_EU, GATEWAY_MODEL_ZIG3]:
             self._voltage = self.get_property("voltage").pop() / 1000
         else:

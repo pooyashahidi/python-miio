@@ -211,6 +211,7 @@ class Huizuo(MiotDevice):
     """
 
     mapping = _MAPPING
+    _supported_models = MODELS_SUPPORTED
 
     def __init__(
         self,
@@ -231,12 +232,10 @@ class Huizuo(MiotDevice):
         if model in MODELS_WITH_HEATER:
             self.mapping.update(_ADDITIONAL_MAPPING_HEATER)
 
-        super().__init__(ip, token, start_id, debug, lazy_discover)
+        super().__init__(ip, token, start_id, debug, lazy_discover, model=model)
 
-        if model in MODELS_SUPPORTED:
-            self.model = model
-        else:
-            self.model = MODEL_HUIZUO_PIS123
+        if model not in MODELS_SUPPORTED:
+            self._model = MODEL_HUIZUO_PIS123
             _LOGGER.error(
                 "Device model %s unsupported. Falling back to %s.", model, self.model
             )

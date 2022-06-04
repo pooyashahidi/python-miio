@@ -4,18 +4,40 @@ Getting started
 Installation
 ============
 
-The easiest way to install the package is to use pip:
-``pip3 install python-miio`` . `Using
-virtualenv <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`__
-is recommended.
+You can install the most recent release using pip:
+
+.. code-block:: console
+
+    pip install python-miio
 
 
-Please make sure you have ``libffi`` and ``openssl`` headers installed, you can
-do this on Debian-based systems (like Rasperry Pi) with
+Alternatively, you can clone this repository and use poetry to install the current master:
 
-.. code-block:: bash
+.. code-block:: console
 
-    apt-get install libffi-dev libssl-dev
+    git clone https://github.com/rytilahti/python-miio.git
+    cd python-miio/
+    poetry install
+
+This will install python-miio into a separate virtual environment outside of your regular python installation.
+You can then execute installed programs (like ``miiocli``):
+
+.. code-block:: console
+
+    poetry run miiocli --help
+
+.. tip::
+
+    If you want to execute more commands in a row, you can activate the
+    created virtual environment to avoid typing ``poetry run`` for each
+    invocation:
+
+    .. code-block:: console
+
+        poetry shell
+        miiocli --help
+        miiocli discover
+
 
 Device discovery
 ================
@@ -31,14 +53,25 @@ encryption token must be known.
 If the returned a token is with characters other than ``0``\ s or ``f``\ s,
 it is likely a valid token which can be used directly for communication.
 If not, the token needs to be extracted from the Mi Home Application,
-see :ref:`logged_tokens` for information how to do this.
+see :ref:`cloud_tokens` for information how to do this.
+
+
+.. _cloud_tokens:
+
+Tokens from Mi Home Cloud
+========================
+
+The fastest way to obtain tokens is to use the
+[cloud tokens extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) by Piotr Machowski.
+Check out his repository for detailed instructions on installation and execution.
+
 
 .. _logged_tokens:
 
 Tokens from Mi Home logs
 ========================
 
-The easiest way to obtain tokens is to browse through log files of the Mi Home
+The easiest way to obtain tokens yourself is to browse through log files of the Mi Home
 app version 5.4.49 for Android. It seems that version was released with debug
 messages turned on by mistake. An APK file with the old version can be easily
 found using one of the popular web search engines. After downgrading use a file

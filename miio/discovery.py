@@ -8,20 +8,25 @@ from typing import Callable, Dict, Optional, Type, Union  # noqa: F401
 
 import zeroconf
 
+from miio.integrations.airpurifier import (
+    AirDogX3,
+    AirFresh,
+    AirFreshT2017,
+    AirPurifier,
+    AirPurifierMiot,
+)
+from miio.integrations.humidifier import (
+    AirHumidifier,
+    AirHumidifierJsq,
+    AirHumidifierJsqs,
+    AirHumidifierMjjsq,
+)
+from miio.integrations.vacuum import DreameVacuum, RoborockVacuum, ViomiVacuum
+
 from . import (
     AirConditionerMiot,
     AirConditioningCompanion,
     AirConditioningCompanionMcn02,
-    AirDogX3,
-    AirDogX5,
-    AirDogX7SM,
-    AirFresh,
-    AirFreshT2017,
-    AirHumidifier,
-    AirHumidifierJsq,
-    AirHumidifierMjjsq,
-    AirPurifier,
-    AirPurifierMiot,
     AirQualityMonitor,
     AqaraCamera,
     Ceil,
@@ -30,25 +35,14 @@ from . import (
     ChuangmiPlug,
     Cooker,
     Device,
-    Fan,
-    FanLeshow,
-    FanMiot,
     Gateway,
     Heater,
-    PhilipsBulb,
-    PhilipsEyecare,
-    PhilipsMoonlight,
-    PhilipsRwread,
-    PhilipsWhiteBulb,
     PowerStrip,
     Toiletlid,
-    Vacuum,
-    ViomiVacuum,
     WaterPurifier,
     WaterPurifierYunmi,
     WifiRepeater,
     WifiSpeaker,
-    Yeelight,
 )
 from .airconditioningcompanion import (
     MODEL_ACPARTNER_V1,
@@ -56,13 +50,6 @@ from .airconditioningcompanion import (
     MODEL_ACPARTNER_V3,
 )
 from .airconditioningcompanionMCN import MODEL_ACPARTNER_MCN02
-from .airfresh import MODEL_AIRFRESH_VA2, MODEL_AIRFRESH_VA4
-from .airhumidifier import (
-    MODEL_HUMIDIFIER_CA1,
-    MODEL_HUMIDIFIER_CB1,
-    MODEL_HUMIDIFIER_V1,
-)
-from .airhumidifier_mjjsq import MODEL_HUMIDIFIER_JSQ1, MODEL_HUMIDIFIER_MJJSQ
 from .airqualitymonitor import (
     MODEL_AIRQUALITYMONITOR_B1,
     MODEL_AIRQUALITYMONITOR_S1,
@@ -78,17 +65,16 @@ from .chuangmi_plug import (
     MODEL_CHUANGMI_PLUG_V2,
     MODEL_CHUANGMI_PLUG_V3,
 )
-from .fan import (
-    MODEL_FAN_P5,
-    MODEL_FAN_SA1,
-    MODEL_FAN_V2,
-    MODEL_FAN_V3,
-    MODEL_FAN_ZA1,
-    MODEL_FAN_ZA3,
-    MODEL_FAN_ZA4,
-)
-from .fan_miot import MODEL_FAN_1C, MODEL_FAN_P9, MODEL_FAN_P10, MODEL_FAN_P11
 from .heater import MODEL_HEATER_MA1, MODEL_HEATER_ZA1
+from .integrations.fan import Fan, FanLeshow, FanMiot, FanZA5
+from .integrations.light import (
+    PhilipsBulb,
+    PhilipsEyecare,
+    PhilipsMoonlight,
+    PhilipsRwread,
+    PhilipsWhiteBulb,
+    Yeelight,
+)
 from .powerstrip import MODEL_POWER_STRIP_V1, MODEL_POWER_STRIP_V2
 from .toiletlid import MODEL_TOILETLID_V1
 
@@ -96,9 +82,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 DEVICE_MAP: Dict[str, Union[Type[Device], partial]] = {
-    "rockrobo-vacuum-v1": Vacuum,
-    "roborock-vacuum-s5": Vacuum,
-    "roborock-vacuum-m1s": Vacuum,
+    "rockrobo-vacuum-v1": RoborockVacuum,
+    "roborock-vacuum-s5": RoborockVacuum,
+    "roborock-vacuum-m1s": RoborockVacuum,
+    "roborock-vacuum-a10": RoborockVacuum,
     "chuangmi-plug-m1": partial(ChuangmiPlug, model=MODEL_CHUANGMI_PLUG_M1),
     "chuangmi-plug-m3": partial(ChuangmiPlug, model=MODEL_CHUANGMI_PLUG_M3),
     "chuangmi-plug-v1": partial(ChuangmiPlug, model=MODEL_CHUANGMI_PLUG_V1),
@@ -115,8 +102,8 @@ DEVICE_MAP: Dict[str, Union[Type[Device], partial]] = {
     "xiaomi.aircondition.mc4": AirConditionerMiot,
     "xiaomi.aircondition.mc5": AirConditionerMiot,
     "airdog-airpurifier-x3": AirDogX3,
-    "airdog-airpurifier-x5": AirDogX5,
-    "airdog-airpurifier-x7sm": AirDogX7SM,
+    "airdog-airpurifier-x5": AirDogX3,
+    "airdog-airpurifier-x7sm": AirDogX3,
     "zhimi-airpurifier-m1": AirPurifier,  # mini model
     "zhimi-airpurifier-m2": AirPurifier,  # mini model 2
     "zhimi-airpurifier-ma1": AirPurifier,  # ms model
@@ -132,18 +119,18 @@ DEVICE_MAP: Dict[str, Union[Type[Device], partial]] = {
     "zhimi-airpurifier-mc1": AirPurifier,  # mc1
     "zhimi-airpurifier-mb3": AirPurifierMiot,  # mb3 (3/3H)
     "zhimi-airpurifier-ma4": AirPurifierMiot,  # ma4 (3)
+    "zhimi-airpurifier-vb2": AirPurifierMiot,  # vb2 (Pro H)
     "chuangmi-camera-ipc009": ChuangmiCamera,
     "chuangmi-camera-ipc019": ChuangmiCamera,
     "chuangmi-ir-v2": ChuangmiIr,
     "chuangmi-remote-h102a03_": ChuangmiIr,
-    "zhimi-humidifier-v1": partial(AirHumidifier, model=MODEL_HUMIDIFIER_V1),
-    "zhimi-humidifier-ca1": partial(AirHumidifier, model=MODEL_HUMIDIFIER_CA1),
-    "zhimi-humidifier-cb1": partial(AirHumidifier, model=MODEL_HUMIDIFIER_CB1),
-    "shuii-humidifier-jsq001": partial(AirHumidifierJsq, model=MODEL_HUMIDIFIER_MJJSQ),
-    "deerma-humidifier-mjjsq": partial(
-        AirHumidifierMjjsq, model=MODEL_HUMIDIFIER_MJJSQ
-    ),
-    "deerma-humidifier-jsq1": partial(AirHumidifierMjjsq, model=MODEL_HUMIDIFIER_JSQ1),
+    "zhimi-humidifier-v1": AirHumidifier,
+    "zhimi-humidifier-ca1": AirHumidifier,
+    "zhimi-humidifier-cb1": AirHumidifier,
+    "shuii-humidifier-jsq001": AirHumidifierJsq,
+    "deerma-humidifier-mjjsq": AirHumidifierMjjsq,
+    "deerma-humidifier-jsq1": AirHumidifierMjjsq,
+    "deerma-humidifier-jsqs": AirHumidifierJsqs,
     "yunmi-waterpuri-v2": WaterPurifier,
     "yunmi.waterpuri.lx9": WaterPurifierYunmi,
     "yunmi.waterpuri.lx11": WaterPurifierYunmi,
@@ -175,20 +162,21 @@ DEVICE_MAP: Dict[str, Union[Type[Device], partial]] = {
     "lumi-camera-aq2": AqaraCamera,
     "yeelink-light-": Yeelight,
     "leshow-fan-ss4": FanLeshow,
-    "zhimi-fan-v2": partial(Fan, model=MODEL_FAN_V2),
-    "zhimi-fan-v3": partial(Fan, model=MODEL_FAN_V3),
-    "zhimi-fan-sa1": partial(Fan, model=MODEL_FAN_SA1),
-    "zhimi-fan-za1": partial(Fan, model=MODEL_FAN_ZA1),
-    "zhimi-fan-za3": partial(Fan, model=MODEL_FAN_ZA3),
-    "zhimi-fan-za4": partial(Fan, model=MODEL_FAN_ZA4),
-    "dmaker-fan-1c": partial(FanMiot, model=MODEL_FAN_1C),
-    "dmaker-fan-p5": partial(Fan, model=MODEL_FAN_P5),
-    "dmaker-fan-p9": partial(FanMiot, model=MODEL_FAN_P9),
-    "dmaker-fan-p10": partial(FanMiot, model=MODEL_FAN_P10),
-    "dmaker-fan-p11": partial(FanMiot, model=MODEL_FAN_P11),
+    "zhimi-fan-v2": Fan,
+    "zhimi-fan-v3": Fan,
+    "zhimi-fan-sa1": Fan,
+    "zhimi-fan-za1": Fan,
+    "zhimi-fan-za3": Fan,
+    "zhimi-fan-za4": Fan,
+    "dmaker-fan-1c": FanMiot,
+    "dmaker-fan-p5": Fan,
+    "dmaker-fan-p9": FanMiot,
+    "dmaker-fan-p10": FanMiot,
+    "dmaker-fan-p11": FanMiot,
+    "zhimi-fan-za5": FanZA5,
     "tinymu-toiletlid-v1": partial(Toiletlid, model=MODEL_TOILETLID_V1),
-    "zhimi-airfresh-va2": partial(AirFresh, model=MODEL_AIRFRESH_VA2),
-    "zhimi-airfresh-va4": partial(AirFresh, model=MODEL_AIRFRESH_VA4),
+    "zhimi-airfresh-va2": AirFresh,
+    "zhimi-airfresh-va4": AirFresh,
     "dmaker-airfresh-t2017": AirFreshT2017,
     "zhimi-airmonitor-v1": partial(AirQualityMonitor, model=MODEL_AIRQUALITYMONITOR_V1),
     "cgllc-airmonitor-b1": partial(AirQualityMonitor, model=MODEL_AIRQUALITYMONITOR_B1),
@@ -198,6 +186,10 @@ DEVICE_MAP: Dict[str, Union[Type[Device], partial]] = {
     "viomi-vacuum-v8": ViomiVacuum,
     "zhimi.heater.za1": partial(Heater, model=MODEL_HEATER_ZA1),
     "zhimi.elecheater.ma1": partial(Heater, model=MODEL_HEATER_MA1),
+    "dreame-vacuum-mc1808": DreameVacuum,
+    "dreame-vacuum-p2008": DreameVacuum,
+    "dreame-vacuum-p2028": DreameVacuum,
+    "dreame-vacuum-p2009": DreameVacuum,
 }
 
 
@@ -218,7 +210,7 @@ def get_addr_from_info(info):
 
 def other_package_info(info, desc):
     """Return information about another package supporting the device."""
-    return "Found %s at %s, check %s" % (info.name, get_addr_from_info(info), desc)
+    return f"Found {info.name} at {get_addr_from_info(info)}, check {desc}"
 
 
 def create_device(name: str, addr: str, device_cls: partial) -> Device:
@@ -270,13 +262,18 @@ class Listener(zeroconf.ServiceListener):
         )
         return None
 
-    def add_service(self, zeroconf, type, name):
-        info = zeroconf.get_service_info(type, name)
+    def add_service(self, zeroconf: "zeroconf.Zeroconf", type_: str, name: str) -> None:
+        """Callback for discovery responses."""
+        info = zeroconf.get_service_info(type_, name)
         addr = get_addr_from_info(info)
 
         if addr not in self.found_devices:
             dev = self.check_and_create_device(info, addr)
-            self.found_devices[addr] = dev
+            if dev is not None:
+                self.found_devices[addr] = dev
+
+    def update_service(self, zc: "zeroconf.Zeroconf", type_: str, name: str) -> None:
+        """Callback for state updates, which we ignore for now."""
 
 
 class Discovery:

@@ -1,8 +1,9 @@
 import inspect
 import logging
+import warnings
 from enum import Enum
 from pprint import pformat as pf
-from typing import Any, Optional  # noqa: F401
+from typing import Any, Dict, List, Optional  # noqa: F401
 
 import click
 
@@ -35,7 +36,9 @@ class DeviceStatus:
         for prop_tuple in props:
             name, prop = prop_tuple
             try:
-                prop_value = prop.fget(self)
+                # ignore deprecation warnings
+                with warnings.catch_warnings():
+                    prop_value = prop.fget(self)
             except Exception as ex:
                 prop_value = ex.__class__.__name__
 
@@ -54,6 +57,8 @@ class Device(metaclass=DeviceGroupMeta):
 
     retry_count = 3
     timeout = 5
+    _mappings: Dict[str, Any] = {}
+    _supported_models: List[str] = []
 
     def __init__(
         self,
@@ -63,9 +68,13 @@ class Device(metaclass=DeviceGroupMeta):
         debug: int = 0,
         lazy_discover: bool = True,
         timeout: int = None,
+        *,
+        model: str = None,
     ) -> None:
         self.ip = ip
-        self.token = token
+        self.token: Optional[str] = token
+        self._model: Optional[str] = model
+        self._info: Optional[DeviceInfo] = None
         timeout = timeout if timeout is not None else self.timeout
         self._protocol = MiIOProtocol(
             ip, token, start_id, debug, lazy_discover, timeout
@@ -92,6 +101,7 @@ class Device(metaclass=DeviceGroupMeta):
         :param dict parameters: Parameters to send
         :param int retry_count: How many times to retry on error
         :param dict extra_parameters: Extra top-level parameters
+        :param str model: Force model to avoid autodetection
         """
         retry_count = retry_count if retry_count is not None else self.retry_count
         return self._protocol.send(
@@ -121,25 +131,67 @@ class Device(metaclass=DeviceGroupMeta):
             "Model: {result.model}\n"
             "Hardware version: {result.hardware_version}\n"
             "Firmware version: {result.firmware_version}\n",
-        )
+        ),
+        skip_autodetect=True,
     )
-    def info(self) -> DeviceInfo:
-        """Get miIO protocol information from the device.
+    def info(self, *, skip_cache=False) -> DeviceInfo:
+        """Get (and cache) miIO protocol information from the device.
 
         This includes information about connected wlan network, and hardware and
         software versions.
+
+        :param skip_cache bool: Skip the cache
         """
+        if self._info is not None and not skip_cache:
+            return self._info
+
+        return self._fetch_info()
+
+    def _fetch_info(self) -> DeviceInfo:
+        """Perform miIO.info query on the device and cache the result."""
         try:
-            return DeviceInfo(self.send("miIO.info"))
+            devinfo = DeviceInfo(self.send("miIO.info"))
+            self._info = devinfo
+            _LOGGER.debug("Detected model %s", devinfo.model)
+            cls = self.__class__.__name__
+            bases = ["Device", "MiotDevice"]
+            if devinfo.model not in self.supported_models and cls not in bases:
+                _LOGGER.warning(
+                    "Found an unsupported model '%s' for class '%s'. If this is working for you, please open an issue at https://github.com/rytilahti/python-miio/",
+                    devinfo.model,
+                    cls,
+                )
+
+            return devinfo
         except PayloadDecodeException as ex:
             raise DeviceInfoUnavailableException(
                 "Unable to request miIO.info from the device"
             ) from ex
 
     @property
-    def raw_id(self):
+    def device_id(self) -> int:
+        """Return device id (did), if available."""
+        if not self._protocol._device_id:
+            self.send_handshake()
+        return int.from_bytes(self._protocol._device_id, byteorder="big")
+
+    @property
+    def raw_id(self) -> int:
         """Return the last used protocol sequence id."""
         return self._protocol.raw_id
+
+    @property
+    def supported_models(self) -> List[str]:
+        """Return a list of supported models."""
+        return self._supported_models
+
+    @property
+    def model(self) -> str:
+        """Return device model."""
+        if self._model is not None:
+            return self._model
+
+        return self.info().model
 
     def update(self, url: str, md5: str):
         """Start an OTA update."""
@@ -210,10 +262,10 @@ class Device(metaclass=DeviceGroupMeta):
         """Helper to test device properties."""
 
         def ok(x):
-            click.echo(click.style(x, fg="green", bold=True))
+            click.echo(click.style(str(x), fg="green", bold=True))
 
         def fail(x):
-            click.echo(click.style(x, fg="red", bold=True))
+            click.echo(click.style(str(x), fg="red", bold=True))
 
         try:
             model = self.info().model
@@ -223,7 +275,7 @@ class Device(metaclass=DeviceGroupMeta):
 
         click.echo(f"Testing properties {properties} for {model}")
         valid_properties = {}
-        max_property_len = max([len(p) for p in properties])
+        max_property_len = max(len(p) for p in properties)
         for property in properties:
             try:
                 click.echo(f"Testing {property:{max_property_len+2}} ", nl=False)
@@ -254,7 +306,7 @@ class Device(metaclass=DeviceGroupMeta):
 
         props_to_test = list(valid_properties.keys())
         max_properties = -1
-        while len(props_to_test) > 1:
+        while len(props_to_test) > 0:
             try:
                 click.echo(
                     f"Testing {len(props_to_test)} properties at once ({' '.join(props_to_test)}): ",

@@ -227,6 +227,8 @@ class AirConditioningCompanionStatus(DeviceStatus):
 class AirConditioningCompanion(Device):
     """Main class representing Xiaomi Air Conditioning Companion V1 and V2."""
 
+    _supported_models = MODELS_SUPPORTED
+
     def __init__(
         self,
         ip: str = None,
@@ -236,12 +238,9 @@ class AirConditioningCompanion(Device):
         lazy_discover: bool = True,
         model: str = MODEL_ACPARTNER_V2,
     ) -> None:
-        super().__init__(ip, token, start_id, debug, lazy_discover)
+        super().__init__(ip, token, start_id, debug, lazy_discover, model=model)
 
-        if model in MODELS_SUPPORTED:
-            self.model = model
-        else:
-            self.model = MODEL_ACPARTNER_V2
+        if self.model not in MODELS_SUPPORTED:
             _LOGGER.error(
                 "Device model %s unsupported. Falling back to %s.", model, self.model
             )

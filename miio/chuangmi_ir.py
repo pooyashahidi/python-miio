@@ -31,6 +31,12 @@ class ChuangmiIrException(DeviceException):
 class ChuangmiIr(Device):
     """Main class representing Chuangmi IR Remote Controller."""
 
+    _supported_models = [
+        "chuangmi.ir.v2",
+        "chuangmi.remote.v2",
+        "chuangmi-remote-h102a03",  # maybe?
+    ]
+
     PRONTO_RE = re.compile(r"^([\da-f]{4}\s?){3,}([\da-f]{4})$", re.IGNORECASE)
 
     @command(
@@ -153,7 +159,7 @@ class ChuangmiIr(Device):
         else:
             command_type, command, *command_args = command.split(":")
 
-        arg_types = [int]
+        arg_types = [int, int]
         if len(command_args) > len(arg_types):
             raise ChuangmiIrException("Invalid command arguments count")
 

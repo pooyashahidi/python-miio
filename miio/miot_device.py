@@ -28,9 +28,16 @@ MiotMapping = Dict[str, Dict[str, Any]]
 
 
 class MiotDevice(Device):
-    """Main class representing a MIoT device."""
+    """Main class representing a MIoT device.
 
-    mapping: MiotMapping
+    The inheriting class should use the `_mappings` to set the `MiotMapping` keyed by
+    the model names to inform which mapping is to be used for methods contained in this
+    class. Defining the mappiong using `mapping` class variable is deprecated but
+    remains in-place for backwards compatibility.
+    """
+
+    mapping: MiotMapping  # Deprecated, use _mappings instead
+    _mappings: Dict[str, MiotMapping] = {}
 
     def __init__(
         self,
@@ -41,15 +48,16 @@ class MiotDevice(Device):
         lazy_discover: bool = True,
         timeout: int = None,
         *,
+        model: str = None,
         mapping: MiotMapping = None,
     ):
         """Overloaded to accept keyword-only `mapping` parameter."""
-        super().__init__(ip, token, start_id, debug, lazy_discover, timeout)
+        super().__init__(
+            ip, token, start_id, debug, lazy_discover, timeout, model=model
+        )
 
-        if mapping is None and not hasattr(self, "mapping"):
-            raise DeviceException(
-                "Neither the class nor the parameter defines the mapping"
-            )
+        if mapping is None and not hasattr(self, "mapping") and not self._mappings:
+            _LOGGER.warning("Neither the class nor the parameter defines the mapping")
 
         if mapping is not None:
             self.mapping = mapping
@@ -58,9 +66,8 @@ class MiotDevice(Device):
         """Retrieve raw properties based on mapping."""
 
         # We send property key in "did" because it's sent back via response and we can identify the property.
-        properties = [
-            {"did": k, **v} for k, v in self.mapping.items() if "aiid" not in v
-        ]
+        mapping = self._get_mapping()
+        properties = [{"did": k, **v} for k, v in mapping.items() if "aiid" not in v]
 
         return self.get_properties(
             properties, property_getter="get_properties", max_properties=max_properties
@@ -72,10 +79,11 @@ class MiotDevice(Device):
     )
     def call_action(self, name: str, params=None):
         """Call an action by a name in the mapping."""
-        if name not in self.mapping:
+        mapping = self._get_mapping()
+        if name not in mapping:
             raise DeviceException(f"Unable to find {name} in the mapping")
 
-        action = self.mapping[name]
+        action = mapping[name]
 
         if "siid" not in action or "aiid" not in action:
             raise DeviceException(f"{name} is not an action (missing siid or aiid)")
@@ -140,7 +148,29 @@ class MiotDevice(Device):
 
     def set_property(self, property_key: str, value):
         """Sets property value using the existing mapping."""
+        mapping = self._get_mapping()
         return self.send(
             "set_properties",
-            [{"did": property_key, **self.mapping[property_key], "value": value}],
+            [{"did": property_key, **mapping[property_key], "value": value}],
         )
+
+    def _get_mapping(self) -> MiotMapping:
+        """Return the protocol mapping to use.
+
+        The logic is as follows:
+        1. Use device model as key to lookup _mappings for the mapping
+        2. If no match is found, but _mappings is defined, use the first item
+        3. Fallback to class-defined `mapping` for backwards compat
+        """
+        if not self._mappings:
+            return self.mapping
+        mapping = self._mappings.get(self.model)
+        if mapping is not None:
+            return mapping
+
+        first_model, first_mapping = list(self._mappings.items())[0]
+        _LOGGER.warning(
+            "Unable to find mapping for %s, falling back to %s", self.model, first_model
+        )
+
+        return first_mapping

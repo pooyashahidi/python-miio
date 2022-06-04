@@ -27,6 +27,17 @@ GATEWAY_MODEL_AC_V2 = "lumi.acpartner.v2"
 GATEWAY_MODEL_AC_V3 = "lumi.acpartner.v3"
 
 
+SUPPORTED_MODELS = [
+    GATEWAY_MODEL_CHINA,
+    GATEWAY_MODEL_EU,
+    GATEWAY_MODEL_ZIG3,
+    GATEWAY_MODEL_AQARA,
+    GATEWAY_MODEL_AC_V1,
+    GATEWAY_MODEL_AC_V2,
+    GATEWAY_MODEL_AC_V3,
+]
+
+
 class GatewayException(DeviceException):
     """Exception for the Xioami Gateway communication."""
 
@@ -77,6 +88,8 @@ class Gateway(Device):
     * get_lumi_bind ["scene", <page number>] for rooms/devices
     """
 
+    _supported_models = SUPPORTED_MODELS
+
     def __init__(
         self,
         ip: str = None,
@@ -84,8 +97,10 @@ class Gateway(Device):
         start_id: int = 0,
         debug: int = 0,
         lazy_discover: bool = True,
+        *,
+        model: str = None,
     ) -> None:
-        super().__init__(ip, token, start_id, debug, lazy_discover)
+        super().__init__(ip, token, start_id, debug, lazy_discover, model=model)
 
         self._alarm = Alarm(parent=self)
         self._radio = Radio(parent=self)
@@ -133,13 +148,6 @@ class Gateway(Device):
         if self._info is None:
             self._info = self.info()
         return self._info.mac_address
-
-    @property
-    def model(self):
-        """Return the zigbee model of the gateway."""
-        if self._info is None:
-            self._info = self.info()
-        return self._info.model
 
     @property
     def subdevice_model_map(self):

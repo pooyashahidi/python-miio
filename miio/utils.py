@@ -12,7 +12,7 @@ def deprecated(reason):
     From https://stackoverflow.com/a/40301488
     """
 
-    string_types = (type(b""), type(u""))
+    string_types = (bytes, str)
     if isinstance(reason, string_types):
 
         # The @deprecated is used with a 'reason'.
@@ -103,7 +103,7 @@ def rgb_to_int(x: Tuple[int, int, int]) -> int:
 
 
 def int_to_brightness(x: int) -> int:
-    """"Return brightness (0-100) from integer."""
+    """Return brightness (0-100) from integer."""
     return x >> 24
 
 

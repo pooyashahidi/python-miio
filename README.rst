@@ -55,6 +55,12 @@ You can get the list of available commands for any given module by passing `--he
       add_timer                Add a timer.
       ..
 
+Each command invocation will automatically detect the device model necessary for some actions by querying the device.
+You can avoid this by specifying the model manually::
+
+    miiocli vacuum --model roborock.vacuum.s5 --ip <ip> --token <token> start
+
+
 API usage
 ---------
 All functionality is accessible through the `miio` module::
@@ -65,7 +71,15 @@ All functionality is accessible through the `miio` module::
     vac.start()
 
 Each separate device type inherits from `miio.Device`
-(and in case of MIoT devices, `miio.MiotDevice`) which provides common API.
+(and in case of MIoT devices, `miio.MiotDevice`) which provides a common API.
+
+Each command invocation will automatically detect (and cache) the device model necessary for some actions
+by querying the device.
+You can avoid this by specifying the model manually::
+
+    from miio import Vacuum
+
+    vac = Vacuum("<ip address>", "<token>", model="roborock.vacuum.s5")
 
 Please refer to `API documentation <https://python-miio.readthedocs.io/en/latest/api/miio.html>`__ for more information.
 
@@ -80,16 +94,16 @@ Contributing
 ------------
 
 We welcome all sorts of contributions from patches to add improvements or fixing bugs to improving the documentation.
-To ease the process of setting up a development environment we have prepared `a short guide <https://python-miio.readthedocs.io/en/latest/new_devices.html>`__ for getting you started.
+To ease the process of setting up a development environment we have prepared `a short guide <https://python-miio.readthedocs.io/en/latest/contributing.html>`__ for getting you started.
 
 
 Supported devices
 -----------------
 
--  Xiaomi Mi Robot Vacuum V1, S5, M1S, S7
+-  Xiaomi Mi Robot Vacuum V1, S4, S4 MAX, S5, S5 MAX, S6 Pure, M1S, S7
 -  Xiaomi Mi Home Air Conditioner Companion
 -  Xiaomi Mi Smart Air Conditioner A (xiaomi.aircondition.mc1, mc2, mc4, mc5)
--  Xiaomi Mi Air Purifier 2, 3H, 3C, Pro (zhimi.airpurifier.m2, mb3, mb4, v7)
+-  Xiaomi Mi Air Purifier 2, 3H, 3C, 4, Pro, Pro H, 4 Pro (zhimi.airpurifier.m2, mb3, mb4, mb5, v7, vb2, va2), 4 Lite
 -  Xiaomi Mi Air (Purifier) Dog X3, X5, X7SM (airdog.airpurifier.x3, airdog.airpurifier.x5, airdog.airpurifier.x7sm)
 -  Xiaomi Mi Air Humidifier
 -  Xiaomi Aqara Camera
@@ -97,6 +111,8 @@ Supported devices
 -  Xiaomi Mijia 360 1080p
 -  Xiaomi Mijia STYJ02YM (Viomi)
 -  Xiaomi Mijia 1C STYTJ01ZHM (Dreame)
+-  Dreame F9, D9, Z10 Pro
+-  Xiaomi Mi Home (Mijia) G1 Robot Vacuum Mop MJSTG1
 -  Xiaomi Roidmi Eve
 -  Xiaomi Mi Smart WiFi Socket
 -  Xiaomi Chuangmi Plug V1 (1 Socket, 1 USB Port)
@@ -111,7 +127,7 @@ Supported devices
 -  Xiaomi Philips Zhirui Bedroom Smart Lamp
 -  Huayi Huizuo Lamps
 -  Xiaomi Universal IR Remote Controller (Chuangmi IR)
--  Xiaomi Mi Smart Pedestal Fan V2, V3, SA1, ZA1, ZA3, ZA4, 1C, P5, P9, P10, P11
+-  Xiaomi Mi Smart Pedestal Fan V2, V3, SA1, ZA1, ZA3, ZA4, ZA5 1C, P5, P9, P10, P11
 -  Xiaomi Rosou SS4 Ventilator (leshow.fan.ss4)
 -  Xiaomi Mi Air Humidifier V1, CA1, CA4, CB1, MJJSQ, JSQ, JSQ1, JSQ001
 -  Xiaomi Mi Water Purifier (Basic support: Turn on & off)
@@ -131,10 +147,14 @@ Supported devices
 -  Xiaomi Mi Smart Space Heater
 -  Xiaomiyoupin Curtain Controller (Wi-Fi) (lumi.curtain.hagl05)
 -  Xiaomi Xiaomi Mi Smart Space Heater S (zhimi.heater.mc2)
+-  Xiaomi Xiaomi Mi Smart Space Heater 1S (zhimi.heater.za2)
 -  Yeelight Dual Control Module (yeelink.switch.sw1)
 -  Scishare coffee maker (scishare.coffee.s1102)
 -  Qingping Air Monitor Lite (cgllc.airm.cgdn1)
 -  Xiaomi Walkingpad A1 (ksmb.walkingpad.v3)
+-  Xiaomi Smart Pet Water Dispenser (mmgg.pet_waterer.s1, s4)
+-  Xiaomi Mi Smart Humidifer S (jsqs, jsq5)
+-  Xiaomi Mi Robot Vacuum Mop 2 (Pro+, Ultra)
 
 
 *Feel free to create a pull request to add support for new devices as
@@ -169,10 +189,18 @@ Home Assistant (custom)
 -  `Xiaomi Mi Smart Rice Cooker <https://github.com/syssi/xiaomi_cooker>`__
 -  `Xiaomi Raw Sensor <https://github.com/syssi/xiaomi_raw>`__
 -  `Xiaomi MIoT Devices <https://github.com/ha0y/xiaomi_miot_raw>`__
+-  `Xiaomi Miot Auto <https://github.com/al-one/hass-xiaomi-miot>`__
 
-Other projects
-^^^^^^^^^^^^^^
+Other related projects
+----------------------
 
+This is a list of other projects around the Xiaomi ecosystem that you can find interesting.
+Feel free to submit more related projects.
+
+-  `dustcloud <https://github.com/dgiese/dustcloud>`__ (reverse engineering and rooting xiaomi devices)
+-  `Valetudo <https://github.com/Hypfer/Valetudo>`__ (cloud free vacuum firmware)
+-  `micloud <https://github.com/Squachen/micloud>`__ (library to access xiaomi cloud services, can be used to obtain device tokens)
+-  `micloudfaker <https://github.com/unrelentingtech/micloudfaker>`__ (dummy cloud server, can be used to fix powerstrip status requests when without internet access)
 -  `Your project here? Feel free to open a PR! <https://github.com/rytilahti/python-miio/pulls>`__
 
 .. |Chat| image:: https://img.shields.io/matrix/python-miio-chat:matrix.org

@@ -102,6 +102,8 @@ class AirConditioningCompanionStatus(DeviceStatus):
 class AirConditioningCompanionMcn02(Device):
     """Main class representing Xiaomi Air Conditioning Companion V1 and V2."""
 
+    _supported_models = [MODEL_ACPARTNER_MCN02]
+
     def __init__(
         self,
         ip: str = None,
@@ -113,7 +115,7 @@ class AirConditioningCompanionMcn02(Device):
     ) -> None:
         if start_id is None:
             start_id = random.randint(0, 999)  # nosec
-        super().__init__(ip, token, start_id, debug, lazy_discover)
+        super().__init__(ip, token, start_id, debug, lazy_discover, model=model)
 
         if model != MODEL_ACPARTNER_MCN02:
             _LOGGER.error(

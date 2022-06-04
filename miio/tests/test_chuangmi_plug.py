@@ -15,7 +15,7 @@ from .dummies import DummyDevice
 
 class DummyChuangmiPlugV1(DummyDevice, ChuangmiPlug):
     def __init__(self, *args, **kwargs):
-        self.model = MODEL_CHUANGMI_PLUG_V1
+        self._model = MODEL_CHUANGMI_PLUG_V1
         self.state = {"on": True, "usb_on": True, "temperature": 32}
         self.return_values = {
             "get_prop": self._get_state,
@@ -86,7 +86,7 @@ class TestChuangmiPlugV1(TestCase):
 
 class DummyChuangmiPlugV3(DummyDevice, ChuangmiPlug):
     def __init__(self, *args, **kwargs):
-        self.model = MODEL_CHUANGMI_PLUG_V3
+        self._model = MODEL_CHUANGMI_PLUG_V3
         self.state = {"on": True, "usb_on": True, "temperature": 32, "wifi_led": "off"}
         self.return_values = {
             "get_prop": self._get_state,
@@ -164,20 +164,27 @@ class TestChuangmiPlugV3(TestCase):
         self.device.usb_off()
         assert self.device.status().usb_power is False
 
-    def test_set_wifi_led(self):
-        def wifi_led():
-            return self.device.status().wifi_led
+    def test_led(self):
+        def led():
+            return self.device.status().led
 
-        self.device.set_wifi_led(True)
-        assert wifi_led() is True
+        self.device.set_led(True)
+        assert led() is True
 
-        self.device.set_wifi_led(False)
-        assert wifi_led() is False
+        self.device.set_led(False)
+        assert led() is False
+
+    def test_wifi_led_deprecation(self):
+        with pytest.deprecated_call():
+            self.device.set_wifi_led(True)
+
+        with pytest.deprecated_call():
+            self.device.status().wifi_led
 
 
 class DummyChuangmiPlugM1(DummyDevice, ChuangmiPlug):
     def __init__(self, *args, **kwargs):
-        self.model = MODEL_CHUANGMI_PLUG_M1
+        self._model = MODEL_CHUANGMI_PLUG_M1
         self.state = {"power": "on", "temperature": 32}
         self.return_values = {
             "get_prop": self._get_state,

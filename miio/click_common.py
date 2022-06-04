@@ -7,7 +7,6 @@ import ipaddress
 import json
 import logging
 import re
-import sys
 from functools import partial, wraps
 from typing import Callable, Set, Type, Union
 
@@ -16,13 +15,6 @@ import click
 import miio
 
 from .exceptions import DeviceError
-
-if sys.version_info < (3, 5):
-    click.echo(
-        "To use this script you need python 3.5 or newer, got %s" % (sys.version_info,)
-    )
-    sys.exit(1)
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,7 +109,7 @@ class GlobalContextObject:
 
 class DeviceGroupMeta(type):
 
-    device_classes: Set[Type] = set()
+    _device_classes: Set[Type] = set()
 
     def __new__(mcs, name, bases, namespace):
         commands = {}
@@ -150,8 +142,13 @@ class DeviceGroupMeta(type):
             namespace["get_device_group"] = classmethod(get_device_group)
 
         cls = super().__new__(mcs, name, bases, namespace)
-        mcs.device_classes.add(cls)
+        mcs._device_classes.add(cls)
         return cls
+
+    @property
+    def supported_models(cls):
+        """Return list of supported models."""
+        return cls._mappings.keys() or cls._supported_models
 
 
 class DeviceGroup(click.MultiCommand):
@@ -168,6 +165,30 @@ class DeviceGroup(click.MultiCommand):
             self.func = func
             func._device_group_command = self
             self.kwargs.setdefault("help", self.func.__doc__)
+
+            def _autodetect_model_if_needed(func):
+                def _wrap(self, *args, **kwargs):
+                    skip_autodetect = func._device_group_command.kwargs.pop(
+                        "skip_autodetect", False
+                    )
+                    if (
+                        not skip_autodetect
+                        and self._model is None
+                        and self._info is None
+                    ):
+                        _LOGGER.debug(
+                            "Unknown model, trying autodetection. %s %s"
+                            % (self._model, self._info)
+                        )
+                        self._fetch_info()
+                    return func(self, *args, **kwargs)
+
+                # TODO HACK to make the command visible to cli
+                _wrap._device_group_command = func._device_group_command
+                return _wrap
+
+            func = _autodetect_model_if_needed(func)
+
             return func
 
         @property
@@ -181,7 +202,10 @@ class DeviceGroup(click.MultiCommand):
             elif self.default_output:
                 output = self.default_output
             else:
-                output = format_output("Running command {0}".format(self.command_name))
+                output = format_output(f"Running command {self.command_name}")
+
+            # Remove skip_autodetect before constructing the click.command
+            self.kwargs.pop("skip_autodetect", None)
 
             func = output(func)
             for decorator in self.decorators:
@@ -195,6 +219,7 @@ class DeviceGroup(click.MultiCommand):
     DEFAULT_PARAMS = [
         click.Option(["--ip"], required=True, callback=validate_ip),
         click.Option(["--token"], required=True, callback=validate_token),
+        click.Option(["--model"], required=False),
     ]
 
     def __init__(
@@ -207,7 +232,7 @@ class DeviceGroup(click.MultiCommand):
         chain=False,
         result_callback=None,
         result_callback_pass_device=True,
-        **attrs
+        **attrs,
     ):
 
         self.commands = getattr(device_class, "_device_group_commands", None)
@@ -232,7 +257,7 @@ class DeviceGroup(click.MultiCommand):
             subcommand_metavar,
             chain,
             result_callback,
-            **attrs
+            **attrs,
         )
 
     def group_callback(self, ctx, *args, **kwargs):

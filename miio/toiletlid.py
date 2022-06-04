@@ -71,21 +71,9 @@ class ToiletlidStatus(DeviceStatus):
 
 
 class Toiletlid(Device):
-    def __init__(
-        self,
-        ip: str = None,
-        token: str = None,
-        start_id: int = 0,
-        debug: int = 0,
-        lazy_discover: bool = True,
-        model: str = MODEL_TOILETLID_V1,
-    ) -> None:
-        super().__init__(ip, token, start_id, debug, lazy_discover)
+    """Support for tinymu.toiletlid.v1."""
 
-        if model in AVAILABLE_PROPERTIES:
-            self.model = model
-        else:
-            self.model = MODEL_TOILETLID_V1
+    _supported_models = list(AVAILABLE_PROPERTIES.keys())
 
     @command(
         default_output=format_output(
@@ -100,7 +88,9 @@ class Toiletlid(Device):
     )
     def status(self) -> ToiletlidStatus:
         """Retrieve properties."""
-        properties = AVAILABLE_PROPERTIES[self.model]
+        properties = AVAILABLE_PROPERTIES.get(
+            self.model, AVAILABLE_PROPERTIES[MODEL_TOILETLID_V1]
+        )
         values = self.get_properties(properties)
 
         color = self.get_ambient_light()

@@ -131,12 +131,9 @@ class Utils:
     def is_hello(x) -> bool:
         """Return if packet is a hello packet."""
         # not very nice, but we know that hellos are 32b of length
-        if "length" in x:
-            val = x["length"]
-        else:
-            val = x.header.value["length"]
+        val = x.get("length", x.header.value["length"])
 
-        return bool(val == 32)
+        return val == 32
 
 
 class TimeAdapter(Adapter):
@@ -193,8 +190,8 @@ class EncryptionAdapter(Adapter):
         ]
 
         for i, quirk in enumerate(decrypted_quirks):
-            decoded = quirk(decrypted).decode("utf-8")
             try:
+                decoded = quirk(decrypted).decode("utf-8")
                 return json.loads(decoded)
             except Exception as ex:
                 # log the error when decrypted bytes couldn't be loaded
